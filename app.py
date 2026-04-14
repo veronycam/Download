@@ -1,29 +1,48 @@
 import streamlit as st
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import LabelEncoder
 
-# Load dataset
-df = pd.read_csv("Iris.csv")
+# --- Page Config ---
+st.set_page_config(page_title="Iris Dataset Explorer", page_icon="🌸", layout="wide")
 
-# Features and target
-X = df[['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']]
-y = df['Species']
+st.title("🌸 Iris Dataset Explorer")
+st.markdown("Interactive dashboard for exploring the classic Iris flower dataset.")
 
-# Train model
-model = RandomForestClassifier()
-model.fit(X, y)
+# --- Load Data ---
+@st.cache_data
+def load_data():
+    df = pd.read_csv("Iris.csv")
+    return df
 
-# App UI
-st.title("🌸 Iris Flower Prediction App")
+df = load_data()
 
-st.write("Enter flower measurements:")
+# --- Sidebar Filters ---
+st.sidebar.header("🔍 Filters")
+species_options = df["Species"].unique().tolist()
+selected_species = st.sidebar.multiselect("Select Species", species_options, default=species_options)
 
-sepal_length = st.slider("Sepal Length", 4.0, 8.0)
-sepal_width = st.slider("Sepal Width", 2.0, 4.5)
-petal_length = st.slider("Petal Length", 1.0, 7.0)
-petal_width = st.slider("Petal Width", 0.1, 2.5)
+filtered_df = df[df["Species"].isin(selected_species)]
 
-# Prediction
-if st.button("Predict"):
-    prediction = model.predict([[sepal_length, sepal_width, petal_length, petal_width]])
-    st.success(f"Prediction: {prediction[0]}")
+# --- Dataset Overview ---
+st.subheader("📋 Dataset Preview")
+col1, col2, col3 = st.columns(3)
+col1.metric("Total Records", len(filtered_df))
+col2.metric("Features", len(df.columns) - 2)
+col3.metric("Species Selected", len(selected_species))
+
+st.dataframe(filtered_df.drop(columns=["Id"]), use_container_width=True)
+
+# --- Stats Summary ---
+st.subheader("📊 Statistical Summary")
+st.dataframe(filtered_df.drop(columns=["Id"]).describe().round(2), use_container_width=True)
+
+# --- Visualizations ---
+st.subheader("📈 Visualizations")
+
+tab1, tab2, tab3, tab4 = st.tabs(["Distribution", "Scatter Plot", "Correlation Heatmap", "PCA"])
+
+features = ["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"]
+palette = {"Iris-setosa": "#4C9BE8", "Iris-versicolor": "#F28C28", "Iris-virginica": "#6DBF6B"}
+st.markdown("---")
+st.caption("Built with Streamlit 🌿 | Iris Dataset")
